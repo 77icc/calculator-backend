@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.python-version
+
+# 测试与缓存
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# 数据库本地文件（部署时由 Render 持久化磁盘托管）
+data/*.db
+data/*.db-journal
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
