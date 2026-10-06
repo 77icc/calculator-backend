@@ -1,31 +1,29 @@
 # Calculator Backend
 
-前后端分离计算器系统的**后端服务**，基于 FastAPI + SQLite 实现。
+前后端分离计算器系统的**后端服务**，基于 Flask + SQLite 实现。
 
-> 配套前端仓库请见博客或仓库主页链接。
+> 在线演示：https://77icc.pythonanywhere.com/
+> 配套前端仓库：https://github.com/77icc/calculator-frontend
 
 ## 一、项目介绍
 
 提供计算器后端能力：
 
 - 接收前端提交的表达式字符串
-
-- 后端完成表达式解析与计算（**不使用** **`eval`/`exec`**，基于 `ast` 模块白名单求值）
-
+- 后端完成表达式解析与计算（**不使用 `eval`/`exec`**，基于 `ast` 模块白名单求值）
 - 计算结果持久化保存到 SQLite 数据库
-
 - 提供历史记录查询、删除接口
+- 同时托管前端静态页面（`index.html`、`style.css`、`script.js`）
 
 ## 二、技术栈
 
-| 组件     | 选型                      |
-| ------ | ----------------------- |
-| Web 框架 | FastAPI 0.110           |
-| ASGI   | Uvicorn 0.27            |
-| 数据库    | SQLite 3（标准库 `sqlite3`） |
-| 数据校验   | Pydantic 2.6            |
-| 解析器    | Python `ast` 标准库        |
-| 语言     | Python 3.10+            |
+| 组件     | 选型                          |
+| -------- | ----------------------------- |
+| Web 框架 | Flask 3.0                     |
+| CORS     | Flask-CORS 4.0               |
+| 数据库   | SQLite 3（标准库 `sqlite3`） |
+| 解析器   | Python `ast` 标准库          |
+| 语言     | Python 3.10+                 |
 
 ## 三、环境要求
 
@@ -51,13 +49,12 @@ source venv/bin/activate
 # 3. 安装依赖
 pip install -r requirements.txt
 
-# 4. 启动开发服务器（自动热重载）
-uvicorn main:app --reload
+# 4. 启动开发服务器
+python main.py
 
 # 5. 浏览器访问
-#    接口文档（Swagger UI）： http://127.0.0.1:8000/docs
-#    健康检查：                http://127.0.0.1:8000/
-#    历史记录：                http://127.0.0.1:8000/api/history
+#    健康检查： http://127.0.0.1:8000/
+#    历史记录： http://127.0.0.1:8000/api/history
 ```
 
 数据库文件首次启动时自动创建于 `data/calculator.db`，无需手动初始化。
@@ -149,13 +146,14 @@ SQLite 表会在应用启动时自动创建（见 `app/database.py` 的 `init_db
 
 ## 八、部署
 
-本项目部署在 [Render](https://render.com)，使用 `render.yaml` 一键配置：
+本项目部署在 [PythonAnywhere](https://www.pythonanywhere.com)（免费层）：
 
-- Web Service（Python 环境）
+- Web App（Python 3.10，WSGI）
+- WSGI 配置文件指向 `main:app`（Flask 的 `application` 对象）
+- SQLite 数据库文件位于项目 `data/` 目录，PythonAnywhere 文件系统持久化
+- 前端静态文件由同一 Flask 应用托管
 
-- 持久化磁盘 1GB（挂载到 `data/` 目录，保存 SQLite 数据库文件）
-
-部署步骤见博客部署章节。
+公网地址：https://77icc.pythonanywhere.com/
 
 ## 九、目录结构
 
@@ -165,13 +163,10 @@ calculator-backend/
 │   ├── __init__.py
 │   ├── database.py     # SQLite 数据访问层
 │   ├── evaluator.py    # ast 白名单表达式解析器
-│   ├── models.py       # Pydantic 数据模型
-│   └── routes.py       # API 路由
+│   └── routes.py       # Flask API 路由
 ├── data/               # SQLite 数据库文件（运行时生成）
-├── main.py             # FastAPI 入口
+├── main.py             # Flask 入口
 ├── requirements.txt
-├── Procfile            # 兼容 Heroku/Render 启动命令
-├── render.yaml         # Render Blueprint 配置
 ├── codestyle.md
 ├── README.md
 └── .gitignore
