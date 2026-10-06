@@ -1,40 +1,32 @@
-"""FastAPI 计算器后端入口。
+"""Flask 计算器后端入口。
 
 启动方式：
-    本地开发： uvicorn main:app --reload
-    生产部署： uvicorn main:app --host 0.0.0.0 --port $PORT
+    本地开发： python main.py
+    生产部署： PythonAnywhere WSGI 加载 application 对象
 """
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask
+from flask_cors import CORS
 
 from app import routes
 from app.database import init_db
 
-app = FastAPI(
-    title="Calculator Backend API",
-    description="前后端分离计算器 - 后端服务",
-    version="1.0.0",
-)
+app = Flask(__name__)
+CORS(app)  # 允许跨域，演示期开放所有源
 
-# 允许前端跨域访问。作业演示期间允许任意源；生产环境应限定为前端域名。
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 启动时初始化数据库表
+init_db()
+
+app.register_blueprint(routes.bp, url_prefix="/api")
 
 
-@app.on_event("startup")
-def _on_startup() -> None:
-    """应用启动时初始化数据库表。"""
-    init_db()
-
-
-@app.get("/")
+@app.route("/")
 def root():
     return {"service": "calculator-backend", "status": "ok"}
 
 
-app.include_router(routes.router, prefix="/api")
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
+
+
+# PythonAnywhere WSGI 需要的变量名
+application = app

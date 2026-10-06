@@ -1,56 +1,52 @@
-"""API 路由定义。
+"""Flask 路由定义。
 
 三个接口：
     POST   /api/calculate      提交表达式计算
     GET    /api/history        获取历史记录列表
-    DELETE /api/history/{id}   删除单条历史记录
+    DELETE /api/history/<id>   删除单条历史记录
 """
-from fastapi import APIRouter, HTTPException
+from flask import Blueprint, jsonify, request
 
 from app.database import delete_history, insert_history, list_history
 from app.evaluator import ExpressionError, evaluate, format_result
-from app.models import (
-    CalculateRequest,
-    CalculateResponse,
-    DeleteResponse,
-    HistoryResponse,
-)
 
-router = APIRouter()
+bp = Blueprint("api", __name__)
 
 
-@router.post("/calculate", response_model=CalculateResponse)
-def calculate(req: CalculateRequest) -> CalculateResponse:
+@bp.post("/calculate")
+def calculate():
     """接收表达式 -> 后端计算 -> 存库 -> 返回结果。"""
+    body = request.get_json(silent=True) or {}
+    expression = body.get("expression", "")
+
     try:
-        value = evaluate(req.expression)
+        value = evaluate(expression)
         result_str = format_result(value)
     except ExpressionError as e:
-        # 非法表达式不存库，仅返回错误信息
-        return CalculateResponse(success=False, message=str(e))
+        return jsonify(success=False, message=str(e)), 200
 
-    hid = insert_history(req.expression, result_str)
-    return CalculateResponse(
+    hid = insert_history(expression, result_str)
+    return jsonify(
         success=True,
-        expression=req.expression,
+        expression=expression,
         result=result_str,
         id=hid,
-    )
+    ), 200
 
 
-@router.get("/history", response_model=HistoryResponse)
-def get_history() -> HistoryResponse:
+@bp.get("/history")
+def get_history():
     """返回全部历史记录（按时间倒序）。"""
     rows = list_history()
-    return HistoryResponse(success=True, data=rows)
+    return jsonify(success=True, data=rows), 200
 
 
-@router.delete("/history/{hid}", response_model=DeleteResponse)
-def remove_history(hid: int) -> DeleteResponse:
+@bp.delete("/history/<int:hid>")
+def remove_history(hid: int):
     """按 id 删除单条历史记录。"""
     if hid <= 0:
-        raise HTTPException(status_code=400, detail="非法的记录 id")
+        return jsonify(success=False, message="非法的记录 id"), 400
     ok = delete_history(hid)
     if not ok:
-        raise HTTPException(status_code=404, detail="记录不存在或已删除")
-    return DeleteResponse(success=True, message="已删除")
+        return jsonify(success=False, message="记录不存在或已删除"), 404
+    return jsonify(success=True, message="已删除"), 200
